@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}短视频平台热点话题数据抓取与趋势分析{% endblock %}</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts-wordcloud/2.1.0/echarts-wordcloud.min.js"></script>
+    <style>
+        :root {
+            --primary: #ff6b9d;
+            --primary-light: #ff8fb8;
+            --primary-dark: #e5527f;
+            --secondary: #c084fc;
+            --secondary-light: #d8b4fe;
+            --bg-body: #fef7fb;
+            --bg-card: #ffffff;
+            --bg-nav: linear-gradient(135deg, #ff6b9d, #c084fc, #818cf8);
+            --text-primary: #374151;
+            --text-secondary: #6b7280;
+            --text-heading: #1f2937;
+            --accent-pink: #f472b6;
+            --accent-purple: #a78bfa;
+            --accent-mint: #34d399;
+            --accent-coral: #fb7185;
+            --accent-yellow: #fbbf24;
+            --accent-sky: #38bdf8;
+            --border-light: rgba(244, 114, 182, 0.15);
+            --shadow-soft: 0 4px 24px rgba(255, 107, 157, 0.08);
+            --shadow-hover: 0 8px 32px rgba(255, 107, 157, 0.15);
+            --gradient-pink: linear-gradient(135deg, #ff6b9d, #f472b6);
+            --gradient-purple: linear-gradient(135deg, #c084fc, #818cf8);
+            --gradient-warm: linear-gradient(135deg, #ff6b9d, #fbbf24);
+            --gradient-fresh: linear-gradient(135deg, #34d399, #38bdf8);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-body);
+            background-image:
+                radial-gradient(ellipse at 10% 0%, rgba(255,107,157,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 100%, rgba(192,132,252,0.06) 0%, transparent 50%);
+            color: var(--text-primary);
+            font-family: "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+            min-height: 100vh;
+        }
+
+        /* ===== 导航栏 ===== */
+        .navbar {
+            background: var(--bg-nav) !important;
+            border: none;
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.2);
+            padding: 0.6rem 0;
+        }
+        .navbar-brand {
+            color: #fff !important;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+        .navbar-brand i { color: #fde68a; margin-right: 4px; }
+        .nav-link {
+            color: rgba(255,255,255,0.85) !important;
+            font-weight: 500;
+            padding: 0.45rem 0.9rem !important;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            font-size: 0.92rem;
+            margin: 0 2px;
+        }
+        .nav-link:hover {
+            color: #fff !important;
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+        .nav-link.active {
+            color: var(--primary) !important;
+            background: rgba(255,255,255,0.92);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .nav-link i { margin-right: 3px; }
+
+        /* ===== 页面标题 ===== */
+        h2 {
+            color: var(--text-heading);
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        h2 i { margin-right: 6px; }
+
+        /* ===== 卡片 ===== */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-3px);
+        }
+        .card-header {
+            background: linear-gradient(135deg, rgba(255,107,157,0.06), rgba(192,132,252,0.06));
+            border-bottom: 1px solid var(--border-light);
+            font-weight: 600;
+            color: var(--primary-dark);
+            padding: 0.85rem 1.2rem;
+            font-size: 0.95rem;
+        }
+        .card-header i { color: var(--accent-purple); margin-right: 5px; }
+        .card-body { padding: 1.2rem; }
+
+        /* ===== 统计卡片 ===== */
+        .stat-card {
+            text-align: center;
+            padding: 24px 16px;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--gradient-pink);
+            border-radius: 16px 16px 0 0;
+        }
+        .stat-card .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: var(--gradient-pink);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        /* ===== 按钮 ===== */
+        .btn-primary {
+            background: var(--gradient-pink);
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            padding: 0.45rem 1.5rem;
+            box-shadow: 0 3px 12px rgba(255, 107, 157, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: var(--gradient-pink);
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 18px rgba(255, 107, 157, 0.4);
+        }
+        .btn-outline-primary {
+            color: var(--primary);
+            border-color: var(--primary);
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        /* ===== 表单 ===== */
+        .form-control, .form-select {
+            background: #fff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        .form-control:focus, .form-select:focus {
+            background: #fff;
+            border-color: var(--primary-light);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 3px rgba(255,107,157,0.15);
+        }
+        .form-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.88rem;
+        }
+
+        /* ===== 表格 ===== */
+        .table { color: var(--text-primary); }
+        .table thead th {
+            background: linear-gradient(135deg, rgba(255,107,157,0.08), rgba(192,132,252,0.08));
+            border-color: var(--border-light);
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 0.75rem 0.6rem;
+        }
+        .table td {
+            border-color: #f3f4f6;
+            font-size: 0.88rem;
+            padding: 0.7rem 0.6rem;
+            vertical-align: middle;
+        }
+        .table-hover tbody tr:hover {
+            background: rgba(255,107,157,0.04);
+        }
+
+        /* ===== 徽章 ===== */
+        .badge {
+            font-weight: 500;
+            border-radius: 12px;
+            padding: 0.35em 0.7em;
+            font-size: 0.78rem;
+        }
+        .badge-positive { background: linear-gradient(135deg, #34d399, #6ee7b7); color: #064e3b; }
+        .badge-neutral { background: linear-gradient(135deg, #fbbf24, #fde68a); color: #78350f; }
+        .badge-negative { background: linear-gradient(135deg, #fb7185, #fda4af); color: #881337; }
+        .bg-danger { background: var(--gradient-pink) !important; }
+        .bg-warning { background: linear-gradient(135deg, #fbbf24, #f59e0b) !important; }
+        .bg-secondary { background: linear-gradient(135deg, #9ca3af, #d1d5db) !important; }
+        .bg-info { background: linear-gradient(135deg, #c084fc, #a78bfa) !important; color: #fff !important; }
+
+        /* ===== 筛选栏 ===== */
+        .filter-bar {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* ===== 页脚 ===== */
+        footer {
+            background: linear-gradient(135deg, rgba(255,107,157,0.05), rgba(192,132,252,0.05));
+            border-top: 1px solid var(--border-light);
+            padding: 18px 0;
+            margin-top: 48px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+        footer .container { opacity: 0.8; }
+
+        /* ===== 链接 ===== */
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { color: var(--primary-dark); }
+
+        /* ===== 滚动条美化 ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary-light), var(--secondary-light));
+            border-radius: 3px;
+        }
+
+        /* ===== 动画 ===== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .container > h2,
+        .container > .filter-bar,
+        .container > .card,
+        .container > .row {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        /* ===== 可爱加载动画 ===== */
+        .cute-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .cute-loading .loading-hearts {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .cute-loading .loading-hearts span {
+            font-size: 1.5rem;
+            animation: heartBounce 1.2s ease-in-out infinite;
+        }
+        .cute-loading .loading-hearts span:nth-child(1) { animation-delay: 0s; color: #ff6b9d; }
+        .cute-loading .loading-hearts span:nth-child(2) { animation-delay: 0.15s; color: #c084fc; }
+        .cute-loading .loading-hearts span:nth-child(3) { animation-delay: 0.3s; color: #818cf8; }
+        .cute-loading .loading-hearts span:nth-child(4) { animation-delay: 0.45s; color: #f472b6; }
+        .cute-loading .loading-hearts span:nth-child(5) { animation-delay: 0.6s; color: #fb7185; }
+        .cute-loading .loading-text {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+        .cute-loading .loading-bar {
+            width: 120px;
+            height: 4px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .cute-loading .loading-bar::after {
+            content: '';
+            display: block;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d, #c084fc, #818cf8);
+            border-radius: 4px;
+            animation: loadingSlide 1.5s ease-in-out infinite;
+        }
+        @keyframes heartBounce {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+            50% { transform: translateY(-12px) scale(1.2); opacity: 1; }
+        }
+        @keyframes loadingSlide {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(200%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-fire"></i> 短视频平台热点话题数据抓取与趋势分析</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navBar">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/"><i class="fas fa-home"></i> 首页概览</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/ranking' %}active{% endif %}" href="/ranking"><i class="fas fa-trophy"></i> 热度排行</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/trend' %}active{% endif %}" href="/trend"><i class="fas fa-chart-line"></i> 趋势分析</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/keywords' %}active{% endif %}" href="/keywords"><i class="fas fa-key"></i> 关键词分析</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.path == '/sentiment' %}active{% endif %}" href="/sentiment"><i class="fas fa-heart"></i> 情感分析</a></li>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link" href="/logout" title="退出登录" style="opacity:0.85;">
+                            <i class="fas fa-user-circle"></i> {{ session.get('username', '') }}
+                            <i class="fas fa-sign-out-alt ms-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-4">
+        {% block content %}{% endblock %}
+    </div>
+
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // 将含<script>的HTML注入到指定容器并执行脚本（解决innerHTML不执行script的问题）
+    function injectHTML(container, html) {
+        container.innerHTML = html;
+        var scripts = container.querySelectorAll('script');
+        scripts.forEach(function(oldScript) {
+            var newScript = document.createElement('script');
+            if (oldScript.src) {
+                newScript.src = oldScript.src;
+            } else {
+                newScript.textContent = oldScript.textContent;
+            }
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

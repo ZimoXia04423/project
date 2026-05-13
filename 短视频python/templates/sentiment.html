@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}情感分析 - 短视频平台热点话题数据抓取与趋势分析{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-heart" style="color: var(--accent-pink);"></i> 用户评论情感分析</h2>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+    <form method="GET" action="/sentiment" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" name="start_time" value="{{ start_time }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">结束时间</label>
+            <input type="datetime-local" class="form-control" name="end_time" value="{{ end_time }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">指定视频（可选）</label>
+            <select class="form-select" name="bvid">
+                <option value="">-- 全部评论 --</option>
+                {% for v in video_list %}
+                <option value="{{ v.bvid }}" {% if v.bvid == bvid %}selected{% endif %}>
+                    {{ v.title[:40] }}{% if v.title|length > 40 %}...{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> 分析</button>
+        </div>
+    </form>
+</div>
+
+<!-- 统计概览 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ result.total }}</div>
+            <div class="stat-label"><i class="fas fa-comments"></i> 分析评论总数</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number" style="background: linear-gradient(135deg, #34d399, #6ee7b7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">{{ result.positive_pct }}%</div>
+            <div class="stat-label"><i class="fas fa-smile"></i> 正面评论占比</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">{{ result.neutral_pct }}%</div>
+            <div class="stat-label"><i class="fas fa-meh"></i> 中性评论占比</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number" style="background: linear-gradient(135deg, #fb7185, #f43f5e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">{{ result.negative_pct }}%</div>
+            <div class="stat-label"><i class="fas fa-frown"></i> 负面评论占比</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 情感分布饼图 -->
+    <div class="col-md-5 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-pie"></i> 情感分布饼图</div>
+            <div class="card-body">
+                <div id="sentimentPie" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 情感得分分布 -->
+    <div class="col-md-7 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-bar"></i> 情感分析统计</div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6>平均情感得分</h6>
+                    <div class="progress" style="height: 30px; background: #f3f4f6; border-radius: 12px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: {{ (result.avg_score * 100)|round(1) }}%;
+                                    background: linear-gradient(90deg, #fb7185, #fbbf24, #34d399); border-radius: 12px;"
+                             aria-valuenow="{{ (result.avg_score * 100)|round(1) }}">
+                            {{ result.avg_score }} ({{ (result.avg_score * 100)|round(1) }}%)
+                        </div>
+                    </div>
+                    <small class="text-secondary">0 = 极度负面, 0.5 = 中性, 1 = 极度正面</small>
+                </div>
+
+                <h6>各类情感数量</h6>
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="p-3" style="background: linear-gradient(135deg, rgba(52,211,153,0.08), rgba(110,231,183,0.08)); border: 1px solid rgba(52,211,153,0.2); border-radius: 12px;">
+                            <div style="font-size: 1.8rem; color: #34d399; font-weight: bold;">{{ result.positive }}</div>
+                            <div class="text-secondary">正面评论</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3" style="background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(253,230,138,0.08)); border: 1px solid rgba(251,191,36,0.2); border-radius: 12px;">
+                            <div style="font-size: 1.8rem; color: #f59e0b; font-weight: bold;">{{ result.neutral }}</div>
+                            <div class="text-secondary">中性评论</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3" style="background: linear-gradient(135deg, rgba(251,113,133,0.08), rgba(253,164,175,0.08)); border: 1px solid rgba(251,113,133,0.2); border-radius: 12px;">
+                            <div style="font-size: 1.8rem; color: #fb7185; font-weight: bold;">{{ result.negative }}</div>
+                            <div class="text-secondary">负面评论</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pyecharts + Matplotlib 图表（按需加载） -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-chart-pie"></i> Pyecharts / Matplotlib 图表</span>
+        <button class="btn btn-sm btn-outline-primary" onclick="loadExtraCharts()" id="btnLoadCharts">
+            <i class="fas fa-sync-alt"></i> 加载图表
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="pyechartsBox"></div>
+        <div id="mplBox" class="text-center mt-3"></div>
+        <div id="chartLoading" style="display:none;">
+            <div class="cute-loading">
+                <div class="loading-hearts">
+                    <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
+                </div>
+                <div class="loading-text">正在生成图表，请稍候～</div>
+                <div class="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function loadExtraCharts() {
+    document.getElementById('chartLoading').style.display = 'block';
+    document.getElementById('btnLoadCharts').disabled = true;
+    fetch('/api/chart/sentiment')
+        .then(r => r.json()).then(d => {
+            injectHTML(document.getElementById('pyechartsBox'), d.pyecharts || '');
+            if (d.mpl_img) document.getElementById('mplBox').innerHTML = '<img src="' + d.mpl_img + '" class="img-fluid">';
+            document.getElementById('chartLoading').style.display = 'none';
+        }).catch(() => { document.getElementById('chartLoading').innerHTML = '加载失败'; });
+}
+</script>
+
+<!-- 评论情感详情 -->
+<div class="card">
+    <div class="card-header"><i class="fas fa-list"></i> 评论情感分析详情（部分展示）</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th width="60">#</th>
+                        <th>用户</th>
+                        <th>评论内容</th>
+                        <th width="100">情感得分</th>
+                        <th width="80">情感标签</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in result.details %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ d.user_name[:10] }}</td>
+                        <td>{{ d.content }}</td>
+                        <td>{{ d.score }}</td>
+                        <td>
+                            {% if d.label == '正面' %}
+                            <span class="badge badge-positive">{{ d.label }}</span>
+                            {% elif d.label == '中性' %}
+                            <span class="badge badge-neutral">{{ d.label }}</span>
+                            {% else %}
+                            <span class="badge badge-negative">{{ d.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not result.details %}
+                    <tr><td colspan="5" class="text-center text-secondary py-4">暂无数据</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var pieData = {{ pie_data|safe }};
+    var chartDom = document.getElementById('sentimentPie');
+    var myChart = echarts.init(chartDom);
+
+    myChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'item', formatter: '{b}: {c}条 ({d}%)' },
+        legend: { bottom: 10, textStyle: { color: '#6b7280' } },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: true,
+            itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 3 },
+            label: { color: '#374151', fontSize: 13 },
+            data: pieData.map(function(item) {
+                var colorMap = {'正面': '#34d399', '中性': '#fbbf24', '负面': '#fb7185'};
+                item.itemStyle = { color: colorMap[item.name] || '#c084fc' };
+                return item;
+            })
+        }]
+    });
+    window.addEventListener('resize', function() { myChart.resize(); });
+});
+</script>
+{% endblock %}

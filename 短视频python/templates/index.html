@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}首页概览 - 短视频平台热点话题数据抓取与趋势分析{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt" style="color: var(--primary);"></i> 系统概览</h2>
+        <p class="text-secondary">基于Python的短视频平台热点话题数据抓取与趋势分析系统</p>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_videos }}</div>
+            <div class="stat-label"><i class="fas fa-video"></i> 视频总数</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_comments }}</div>
+            <div class="stat-label"><i class="fas fa-comments"></i> 评论总数</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ crawl_count }}</div>
+            <div class="stat-label"><i class="fas fa-clock"></i> 采集批次</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ tnames|length }}</div>
+            <div class="stat-label"><i class="fas fa-tags"></i> 涉及分区</div>
+        </div>
+    </div>
+</div>
+
+<!-- 功能入口 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-trophy fa-3x mb-3" style="color: var(--accent-coral);"></i>
+                <h5>热度排行</h5>
+                <p class="text-secondary small">按播放量、点赞数等维度查看视频热度排行榜</p>
+                <a href="/ranking" class="btn btn-primary btn-sm">查看排行</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x mb-3" style="color: var(--secondary);"></i>
+                <h5>趋势分析</h5>
+                <p class="text-secondary small">查看热点视频各项指标随时间的变化趋势</p>
+                <a href="/trend" class="btn btn-primary btn-sm">查看趋势</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-key fa-3x mb-3" style="color: var(--accent-purple);"></i>
+                <h5>关键词分析</h5>
+                <p class="text-secondary small">基于jieba分词提取热点话题高频关键词与词云</p>
+                <a href="/keywords" class="btn btn-primary btn-sm">查看关键词</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-heart fa-3x mb-3" style="color: var(--accent-pink);"></i>
+                <h5>情感分析</h5>
+                <p class="text-secondary small">基于SnowNLP分析用户评论情感倾向分布</p>
+                <a href="/sentiment" class="btn btn-primary btn-sm">查看分析</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP10视频 + 分区分布 -->
+<div class="row">
+    <div class="col-md-7 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-fire"></i> 热门视频 TOP10</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="40">#</th>
+                                <th>标题</th>
+                                <th>UP主</th>
+                                <th>播放量</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in top_videos %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td title="{{ v.title }}">{{ v.title[:25] }}{% if v.title|length > 25 %}...{% endif %}</td>
+                                <td>{{ v.author }}</td>
+                                <td>{{ "{:,}".format(v.view_count) }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% if not top_videos %}
+                            <tr><td colspan="4" class="text-center text-secondary py-4">暂无数据，请先运行数据抓取程序</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-pie"></i> 视频分区分布</div>
+            <div class="card-body">
+                <div id="categoryChart" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var chartDom = document.getElementById('categoryChart');
+    if (!chartDom) return;
+    var myChart = echarts.init(chartDom);
+    var pieColors = ['#ff6b9d','#c084fc','#34d399','#fbbf24','#818cf8','#fb7185','#38bdf8','#f472b6','#a78bfa','#6ee7b7','#fda4af','#fde68a','#93c5fd','#d8b4fe','#fca5a5'];
+    myChart.setOption({backgroundColor: 'transparent', title: {text: '', left: 'center'}, tooltip: {trigger: 'item', formatter: '{b}: {c} ({d}%)'}, color: pieColors, series: [{type: 'pie', radius: ['35%', '65%'], data: [], label: {color: '#374151', fontSize: 12}, itemStyle: {borderRadius: 6, borderColor: '#fff', borderWidth: 2}, emphasis: {itemStyle: {shadowBlur: 10, shadowColor: 'rgba(255,107,157,0.3)'}}}]});
+
+    fetch('/api/category_distribution')
+        .then(r => r.json())
+        .then(data => {
+            myChart.setOption({series: [{data: data}]});
+        });
+
+    window.addEventListener('resize', function() { myChart.resize(); });
+});
+</script>
+{% endblock %}

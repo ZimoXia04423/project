@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}趋势分析 - 短视频平台热点话题数据抓取与趋势分析{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-line" style="color: var(--secondary);"></i> 热度趋势分析</h2>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+    <form method="GET" action="/trend" class="row g-3 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label">选择视频</label>
+            <select class="form-select" name="bvid">
+                <option value="">-- 请选择要分析的视频 --</option>
+                {% for v in video_list %}
+                <option value="{{ v.bvid }}" {% if v.bvid == bvid %}selected{% endif %}>
+                    {{ v.title[:50] }}{% if v.title|length > 50 %}...{% endif %} ({{ v.bvid }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> 分析趋势</button>
+        </div>
+    </form>
+</div>
+
+{% if bvid and video_title %}
+<div class="alert" style="background: linear-gradient(135deg, rgba(255,107,157,0.08), rgba(192,132,252,0.08)); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 12px;">
+    <strong>当前视频：</strong>{{ video_title }}
+    <a href="https://www.bilibili.com/video/{{ bvid }}" target="_blank" class="ms-2" style="color: var(--primary);">
+        <i class="fas fa-external-link-alt"></i> 查看原视频
+    </a>
+</div>
+{% endif %}
+
+<!-- 趋势折线图 -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-line"></i> 播放量与互动数据趋势</div>
+            <div class="card-body">
+                <div id="trendChart" style="height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+    {% if bvid %}
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-line"></i> Pyecharts 趋势折线图</span>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadTrendChart()" id="btnLoadCharts">
+                    <i class="fas fa-sync-alt"></i> 加载图表
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="pyechartsBox"></div>
+                <div id="chartLoading" style="display:none;">
+                    <div class="cute-loading">
+                        <div class="loading-hearts">
+                            <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
+                        </div>
+                        <div class="loading-text">正在生成图表，请稍候～</div>
+                        <div class="loading-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function loadTrendChart() {
+        document.getElementById('chartLoading').style.display = 'block';
+        document.getElementById('btnLoadCharts').disabled = true;
+        fetch('/api/chart/trend?bvid={{ bvid }}')
+            .then(r => r.json()).then(d => {
+                injectHTML(document.getElementById('pyechartsBox'), d.pyecharts || '');
+                document.getElementById('chartLoading').style.display = 'none';
+            }).catch(() => { document.getElementById('chartLoading').innerHTML = '加载失败'; });
+    }
+    </script>
+    {% endif %}
+</div>
+
+{% if not bvid %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-info-circle fa-3x mb-3" style="color: var(--primary);"></i>
+        <h5>请选择一个视频查看其热度趋势变化</h5>
+        <p class="text-secondary">系统会展示该视频在不同采集时间点的播放量、点赞数等指标变化折线图</p>
+        <p class="text-secondary small">提示：当仅有一次采集数据时，系统会自动生成模拟增长曲线和未来预测</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var trendData = {{ trend_data|safe }};
+    if (!trendData || !trendData.times || trendData.times.length === 0) return;
+
+    var chartDom = document.getElementById('trendChart');
+    var myChart = echarts.init(chartDom);
+
+    // 检测是否包含模拟/预测数据
+    var hasSimulated = trendData.times.some(function(t) { return t.indexOf('★') >= 0 || t.indexOf('预测') >= 0; });
+    var realIndex = -1;
+    trendData.times.forEach(function(t, i) { if (t.indexOf('★') >= 0) realIndex = i; });
+
+    // 为预测区域设置虚线样式
+    function buildSeriesData(values, color) {
+        if (!hasSimulated) return values;
+        return values.map(function(v, i) {
+            var item = { value: v };
+            if (trendData.times[i] && trendData.times[i].indexOf('★') >= 0) {
+                item.symbolSize = 10;
+                item.symbol = 'diamond';
+            }
+            return item;
+        });
+    }
+
+    var markLineOpt = {};
+    if (realIndex >= 0) {
+        markLineOpt = {
+            silent: true,
+            symbol: 'none',
+            lineStyle: { type: 'dashed', color: '#c084fc', width: 1.5 },
+            data: [{ xAxis: realIndex, label: { formatter: '★ 实际', color: '#c084fc', fontSize: 11 } }]
+        };
+    }
+
+    // 如果有模拟数据，在图表上方显示说明
+    if (hasSimulated) {
+        var noteDiv = document.createElement('div');
+        noteDiv.style.cssText = 'text-align:center; padding:8px 16px; margin-bottom:8px; background:linear-gradient(135deg,rgba(255,107,157,0.06),rgba(192,132,252,0.06)); border-radius:10px; font-size:0.85rem; color:#6b7280;';
+        noteDiv.innerHTML = '<i class="fas fa-magic" style="color:#c084fc;"></i> 仅有一次采集数据，已自动生成 <b style="color:#ff6b9d;">模拟增长曲线</b> + <b style="color:#818cf8;">未来预测</b>（★ 为实际采集点）';
+        chartDom.parentNode.insertBefore(noteDiv, chartDom);
+    }
+
+    var colors = ['#ff6b9d','#c084fc','#fbbf24','#34d399','#38bdf8','#fb7185'];
+    var names = ['播放量','点赞数','弹幕数','投币数','收藏数','评论数'];
+    var keys = ['views','likes','danmakus','coins','favorites','replies'];
+
+    var series = names.map(function(name, idx) {
+        var s = {
+            name: name, type: 'line',
+            data: buildSeriesData(trendData[keys[idx]], colors[idx]),
+            smooth: true,
+            lineStyle: { width: idx === 0 ? 3 : 2, color: colors[idx] },
+            itemStyle: { color: colors[idx] }
+        };
+        if (idx === 0) {
+            s.areaStyle = { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{offset: 0, color: 'rgba(255,107,157,0.25)'}, {offset: 1, color: 'rgba(255,107,157,0)'}] } };
+            if (markLineOpt.data) s.markLine = markLineOpt;
+        }
+        return s;
+    });
+
+    myChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis' },
+        legend: { data: names, textStyle: { color: '#6b7280' }, top: 5 },
+        grid: { left: '3%', right: '4%', bottom: '10%', top: '15%', containLabel: true },
+        xAxis: {
+            type: 'category',
+            data: trendData.times,
+            axisLabel: {
+                color: function(value) {
+                    if (value.indexOf('预测') >= 0) return '#818cf8';
+                    if (value.indexOf('★') >= 0) return '#ff6b9d';
+                    return '#6b7280';
+                },
+                rotate: 20, fontSize: 11
+            }
+        },
+        yAxis: { type: 'value', axisLabel: { color: '#6b7280' } },
+        series: series
+    });
+    window.addEventListener('resize', function() { myChart.resize(); });
+});
+</script>
+{% endblock %}

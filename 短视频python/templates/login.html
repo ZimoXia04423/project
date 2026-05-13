@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录 - 短视频平台热点话题数据抓取与趋势分析</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff6b9d;
+            --primary-light: #ff8fb8;
+            --secondary: #c084fc;
+            --bg-body: #fef7fb;
+            --text-primary: #374151;
+            --text-secondary: #6b7280;
+            --gradient-pink: linear-gradient(135deg, #ff6b9d, #f472b6);
+            --bg-nav: linear-gradient(135deg, #ff6b9d, #c084fc, #818cf8);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-body);
+            background-image:
+                radial-gradient(ellipse at 10% 0%, rgba(255,107,157,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 100%, rgba(192,132,252,0.06) 0%, transparent 50%);
+            font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            padding: 0 20px;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .login-header .logo-icon {
+            width: 72px;
+            height: 72px;
+            background: var(--bg-nav);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(255, 107, 157, 0.25);
+        }
+        .login-header .logo-icon i {
+            font-size: 2rem;
+            color: #fff;
+        }
+        .login-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 36px 32px;
+            box-shadow: 0 4px 24px rgba(255, 107, 157, 0.08);
+            border: 1px solid rgba(244, 114, 182, 0.12);
+        }
+        .form-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+        }
+        .input-group-text {
+            background: linear-gradient(135deg, rgba(255,107,157,0.06), rgba(192,132,252,0.06));
+            border: 1.5px solid #e5e7eb;
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            color: var(--primary);
+        }
+        .form-control {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 0 12px 12px 0;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(255,107,157,0.12);
+        }
+        .btn-login {
+            width: 100%;
+            background: var(--gradient-pink);
+            border: none;
+            border-radius: 12px;
+            padding: 0.65rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(255, 107, 157, 0.3);
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        .btn-login:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(255, 107, 157, 0.4);
+            color: #fff;
+        }
+        .alert {
+            border-radius: 12px;
+            font-size: 0.88rem;
+            border: none;
+        }
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(251,113,133,0.12), rgba(253,164,175,0.12));
+            color: #9f1239;
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-wrapper { animation: fadeInUp 0.6s ease forwards; }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-header">
+            <div class="logo-icon">
+                <i class="fas fa-fire"></i>
+            </div>
+            <h1>短视频平台热点话题数据抓取与趋势分析</h1>
+            <p>管理员登录</p>
+        </div>
+
+        <div class="login-card">
+            {% if error %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-1"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" name="username" placeholder="请输入用户名" required autofocus>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">密码</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" name="password" placeholder="请输入密码" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-login">
+                    <i class="fas fa-sign-in-alt me-1"></i> 登 录
+                </button>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            <i class="fas fa-shield-alt me-1"></i> 仅限管理员访问
+        </div>
+    </div>
+</body>
+</html>

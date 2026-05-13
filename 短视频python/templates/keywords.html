@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}关键词分析 - 短视频平台热点话题数据抓取与趋势分析{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-key" style="color: var(--accent-purple);"></i> 关键词分析</h2>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+    <form method="GET" action="/keywords" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" name="start_time" value="{{ start_time }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">结束时间</label>
+            <input type="datetime-local" class="form-control" name="end_time" value="{{ end_time }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">数据来源</label>
+            <select class="form-select" name="source">
+                <option value="title" {% if source=='title' %}selected{% endif %}>视频标题</option>
+                <option value="comment" {% if source=='comment' %}selected{% endif %}>用户评论</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">关键词数量</label>
+            <select class="form-select" name="top_n">
+                <option value="30" {% if top_n==30 %}selected{% endif %}>TOP 30</option>
+                <option value="50" {% if top_n==50 %}selected{% endif %}>TOP 50</option>
+                <option value="100" {% if top_n==100 %}selected{% endif %}>TOP 100</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> 分析</button>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <!-- 词云图 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-cloud"></i> 关键词词云图</div>
+            <div class="card-body">
+                <div id="wordcloudChart" style="height: 450px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 词频柱状图 -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-chart-bar"></i> 高频关键词 TOP20</div>
+            <div class="card-body">
+                <div id="barChart" style="height: 450px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pyecharts + Matplotlib 图表（按需加载） -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-cloud"></i> Pyecharts / Matplotlib 图表</span>
+        <button class="btn btn-sm btn-outline-primary" onclick="loadExtraCharts()" id="btnLoadCharts">
+            <i class="fas fa-sync-alt"></i> 加载图表
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="pyechartsBox"></div>
+        <div id="mplBox" class="text-center mt-3"></div>
+        <div id="chartLoading" style="display:none;">
+            <div class="cute-loading">
+                <div class="loading-hearts">
+                    <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
+                </div>
+                <div class="loading-text">正在生成图表，请稍候～</div>
+                <div class="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function loadExtraCharts() {
+    document.getElementById('chartLoading').style.display = 'block';
+    document.getElementById('btnLoadCharts').disabled = true;
+    fetch('/api/chart/keywords?source={{ source }}&top_n={{ top_n }}')
+        .then(r => r.json()).then(d => {
+            injectHTML(document.getElementById('pyechartsBox'), d.pyecharts || '');
+            if (d.mpl_img) document.getElementById('mplBox').innerHTML = '<img src="' + d.mpl_img + '" class="img-fluid">';
+            document.getElementById('chartLoading').style.display = 'none';
+        }).catch(() => { document.getElementById('chartLoading').innerHTML = '加载失败'; });
+}
+</script>
+
+<!-- 关键词明细表 -->
+<div class="card">
+    <div class="card-header"><i class="fas fa-list"></i> 关键词词频统计表</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>关键词</th>
+                        <th>出现频次</th>
+                        <th>频次占比</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_count = kw_freq|map(attribute=1)|sum if kw_freq else 1 %}
+                    {% for kw, cnt in kw_freq %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><span class="badge" style="background: var(--primary);">{{ kw }}</span></td>
+                        <td>{{ cnt }}</td>
+                        <td>
+                            <div class="progress" style="height: 18px; background: #f3f4f6; border-radius: 10px;">
+                                <div class="progress-bar" style="width: {{ (cnt / total_count * 100)|round(1) }}%; background: var(--primary);">
+                                    {{ (cnt / total_count * 100)|round(1) }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not kw_freq %}
+                    <tr><td colspan="4" class="text-center text-secondary py-4">暂无数据</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var words = {{ words|safe }};
+    var counts = {{ counts|safe }};
+    var wordcloudData = {{ wordcloud_data|safe }};
+
+    // 词云图
+    var wcDom = document.getElementById('wordcloudChart');
+    var wcChart = echarts.init(wcDom);
+    wcChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { show: true },
+        series: [{
+            type: 'wordCloud',
+            shape: 'circle',
+            left: 'center',
+            top: 'center',
+            width: '90%',
+            height: '90%',
+            sizeRange: [14, 60],
+            rotationRange: [-45, 45],
+            rotationStep: 15,
+            gridSize: 8,
+            drawOutOfBound: false,
+            textStyle: {
+                fontFamily: 'Microsoft YaHei',
+                color: function() {
+                    var colors = ['#ff6b9d', '#c084fc', '#34d399', '#fbbf24', '#fb7185', '#818cf8', '#38bdf8', '#f472b6'];
+                    return colors[Math.floor(Math.random() * colors.length)];
+                }
+            },
+            data: wordcloudData
+        }]
+    });
+
+    // 柱状图（取前20）
+    var top20Words = words.slice(0, 20).reverse();
+    var top20Counts = counts.slice(0, 20).reverse();
+    var barDom = document.getElementById('barChart');
+    var barChart = echarts.init(barDom);
+    barChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+        xAxis: { type: 'value', axisLabel: { color: '#6b7280' } },
+        yAxis: { type: 'category', data: top20Words, axisLabel: { color: '#6b7280', fontSize: 11 } },
+        series: [{
+            type: 'bar',
+            data: top20Counts,
+            barMaxWidth: 25,
+            itemStyle: {
+                borderRadius: [0, 6, 6, 0],
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: '#ff6b9d' },
+                    { offset: 1, color: '#c084fc' }
+                ])
+            },
+            label: { show: true, position: 'right', color: '#374151', fontSize: 11 }
+        }]
+    });
+
+    window.addEventListener('resize', function() { wcChart.resize(); barChart.resize(); });
+});
+</script>
+{% endblock %}

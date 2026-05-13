@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}热度排行 - 短视频平台热点话题数据抓取与趋势分析{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-trophy" style="color: var(--accent-coral);"></i> 热度排行榜</h2>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+    <form method="GET" action="/ranking" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" name="start_time" value="{{ start_time }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">结束时间</label>
+            <input type="datetime-local" class="form-control" name="end_time" value="{{ end_time }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">排序指标</label>
+            <select class="form-select" name="order_by">
+                <option value="view_count" {% if order_by=='view_count' %}selected{% endif %}>播放量</option>
+                <option value="like_count" {% if order_by=='like_count' %}selected{% endif %}>点赞数</option>
+                <option value="coin_count" {% if order_by=='coin_count' %}selected{% endif %}>投币数</option>
+                <option value="danmaku_count" {% if order_by=='danmaku_count' %}selected{% endif %}>弹幕数</option>
+                <option value="favorite_count" {% if order_by=='favorite_count' %}selected{% endif %}>收藏数</option>
+                <option value="reply_count" {% if order_by=='reply_count' %}selected{% endif %}>评论数</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">显示数量</label>
+            <select class="form-select" name="limit">
+                <option value="10" {% if limit==10 %}selected{% endif %}>TOP 10</option>
+                <option value="20" {% if limit==20 %}selected{% endif %}>TOP 20</option>
+                <option value="50" {% if limit==50 %}selected{% endif %}>TOP 50</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> 查询</button>
+        </div>
+    </form>
+</div>
+
+<!-- 柱状图 -->
+<div class="card mb-4">
+    <div class="card-header"><i class="fas fa-chart-bar"></i> 热度排行柱状图（按{{ order_label }}）</div>
+    <div class="card-body">
+        <div id="rankingChart" style="height: 500px;"></div>
+    </div>
+</div>
+
+<!-- Pyecharts + Matplotlib 图表（按需加载） -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-chart-bar"></i> Pyecharts / Matplotlib 图表</span>
+        <button class="btn btn-sm btn-outline-primary" onclick="loadExtraCharts()" id="btnLoadCharts">
+            <i class="fas fa-sync-alt"></i> 加载图表
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="pyechartsBox"></div>
+        <div id="mplBox" class="text-center mt-3"></div>
+        <div id="chartLoading" style="display:none;">
+            <div class="cute-loading">
+                <div class="loading-hearts">
+                    <span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span>
+                </div>
+                <div class="loading-text">正在生成图表，请稍候～</div>
+                <div class="loading-bar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function loadExtraCharts() {
+    document.getElementById('chartLoading').style.display = 'block';
+    document.getElementById('btnLoadCharts').disabled = true;
+    fetch('/api/chart/ranking?order_by={{ order_by }}&limit={{ limit }}')
+        .then(r => r.json()).then(d => {
+            injectHTML(document.getElementById('pyechartsBox'), d.pyecharts || '');
+            if (d.mpl_img) document.getElementById('mplBox').innerHTML = '<img src="' + d.mpl_img + '" class="img-fluid">';
+            document.getElementById('chartLoading').style.display = 'none';
+        }).catch(() => { document.getElementById('chartLoading').innerHTML = '<div class="text-center text-secondary py-3">加载失败，请重试</div>'; });
+}
+</script>
+
+<!-- 数据表格 -->
+<div class="card">
+    <div class="card-header"><i class="fas fa-table"></i> 排行榜明细数据</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>标题</th>
+                        <th>UP主</th>
+                        <th>分区</th>
+                        <th>播放量</th>
+                        <th>点赞</th>
+                        <th>投币</th>
+                        <th>弹幕</th>
+                        <th>收藏</th>
+                        <th>评论</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in data %}
+                    <tr>
+                        <td><span class="badge bg-{% if d.rank<=3 %}danger{% elif d.rank<=10 %}warning text-dark{% else %}secondary{% endif %}">{{ d.rank }}</span></td>
+                        <td title="{{ d.title }}">
+                            <a href="https://www.bilibili.com/video/{{ d.bvid }}" target="_blank" style="color: var(--primary); text-decoration: none;">
+                                {{ d.title[:30] }}{% if d.title|length > 30 %}...{% endif %}
+                            </a>
+                        </td>
+                        <td>{{ d.author }}</td>
+                        <td><span class="badge bg-info text-dark">{{ d.tname }}</span></td>
+                        <td>{{ "{:,}".format(d.view_count) }}</td>
+                        <td>{{ "{:,}".format(d.like_count) }}</td>
+                        <td>{{ "{:,}".format(d.coin_count) }}</td>
+                        <td>{{ "{:,}".format(d.danmaku_count) }}</td>
+                        <td>{{ "{:,}".format(d.favorite_count) }}</td>
+                        <td>{{ "{:,}".format(d.reply_count) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not data %}
+                    <tr><td colspan="10" class="text-center text-secondary py-4">暂无数据</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var titles = {{ titles|safe }};
+    var values = {{ values|safe }};
+    var orderLabel = "{{ order_label }}";
+
+    var chartDom = document.getElementById('rankingChart');
+    var myChart = echarts.init(chartDom);
+    var colors = values.map(function(v, i) {
+        if (i < 3) return '#ff6b9d';
+        if (i < 10) return '#c084fc';
+        return '#818cf8';
+    });
+
+    myChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '3%', right: '4%', bottom: '15%', top: '5%', containLabel: true },
+        xAxis: {
+            type: 'category',
+            data: titles,
+            axisLabel: { rotate: 35, color: '#6b7280', fontSize: 11, interval: 0 }
+        },
+        yAxis: {
+            type: 'value',
+            name: orderLabel,
+            axisLabel: { color: '#6b7280' }
+        },
+        series: [{
+            type: 'bar',
+            data: values.map(function(v, i) { return { value: v, itemStyle: { color: colors[i], borderRadius: [6,6,0,0] } }; }),
+            barMaxWidth: 40,
+            label: { show: values.length <= 20, position: 'top', color: '#374151', fontSize: 10 }
+        }]
+    });
+    window.addEventListener('resize', function() { myChart.resize(); });
+});
+</script>
+{% endblock %}
