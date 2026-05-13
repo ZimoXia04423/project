@@ -1,0 +1,12 @@
+
+path: /Users/wjjj/Desktop/接单/骨折检测系统/yolo_dataset_final
+train: images/train
+val: images/val
+test: images/test
+
+nc: 4
+names:
+  0: fracture
+  1: periostealreaction
+  2: pronatorsign
+  3: softtissue

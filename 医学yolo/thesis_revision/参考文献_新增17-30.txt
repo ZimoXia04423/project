@@ -1,0 +1,41 @@
+══════════════════════════════════════════════════════════════════
+  新增参考文献 [17]–[30]（共 14 条）
+  来源已核对：Crossref / arXiv / 期刊官网 DOI；可直接复制到 Word。
+  使用说明：
+  1）你原文已有 [1]–[16]，本文件从 [17] 起接排；若学校要求全文重排，请统一改序号。
+  2）格式为 GB/T 7714 常见近似体例；定稿前请按学院模板微调标点、刊名缩写、页码。
+  3）建议在正文中至少各引用 1 次，避免“参考文献堆砌”。
+══════════════════════════════════════════════════════════════════
+
+[17] WANG C Y, YEH I H, LIAO H Y M. YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information[EB/OL]. arXiv:2402.13616, 2024.
+
+[18] LV W Y, ZHAO Y, XU S L, et al. DETRs Beat YOLOs on Real-time Object Detection[EB/OL]. arXiv:2304.08069, 2023. (CVPR 2024 录用版本，工程引用亦常用此 arXiv 条目)
+
+[19] CARION N, MASSA F, SYNNAEVE G, et al. End-to-End Object Detection with Transformers[C]//Computer Vision – ECCV 2020. Cham: Springer, 2020: 213-229. DOI: 10.1007/978-3-030-58452-8_13.
+
+[20] COLLINS G S, MOONS K G M, DHIMAN P, et al. TRIPOD+AI statement: updated guidance for reporting clinical prediction models that use regression or machine learning methods[J]. BMJ, 2024, 385: e078378. DOI: 10.1136/bmj-2023-078378.
+
+[21] VASEY B, NAGENDRAN M, CAMPBELL B, et al. Reporting guideline for the early stage clinical evaluation of decision support systems driven by artificial intelligence: DECIDE-AI[J]. BMJ, 2022, 377: e070904. DOI: 10.1136/bmj-2022-070904.
+
+[22] TILL T, TSCHAUNER S, SINGER G, et al. Development and optimization of AI algorithms for wrist fracture detection in children using a freely available dataset[J]. Frontiers in Pediatrics, 2023, 11: 1291804. DOI: 10.3389/fped.2023.1291804.
+
+[23] LIU D R, YANG Z Y, BAO C Y, et al. Artificial intelligence-based method for detecting wrist fractures in children[J]. Scientific Reports, 2025, 15(1): 38555. DOI: 10.1038/s41598-025-22419-y.
+
+[24] CHIEN C T, JU R Y, CHOU K Y, et al. YOLOv9 for fracture detection in pediatric wrist trauma X-ray images[J]. Electronics Letters, 2024, 60(11): e13248. DOI: 10.1049/ell2.13248.
+
+[25] WANG C Y, BOCHKOVSKIY A, LIAO H Y M. YOLOv7: Trainable Bag-of-Freebies Sets New State-of-the-Art for Real-Time Object Detectors[C]//2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR). Piscataway: IEEE, 2023: 7464-7475. DOI: 10.1109/CVPR52729.2023.00721.
+
+[26] LIN T Y, MAIRE M, BELONGIE S, et al. Microsoft COCO: Common Objects in Context[C]//Computer Vision – ECCV 2014. Cham: Springer, 2014: 740-755. DOI: 10.1007/978-3-319-10602-1_48. (目标检测 mAP 等评测常用基准说明)
+
+[27] BOCHKOVSKIY A, WANG C Y, LIAO H Y M. YOLOv4: Optimal Speed and Accuracy of Object Detection[EB/OL]. arXiv:2004.10934, 2020.
+
+[28] AHMED A, IMRAN A S, MANAF A, et al. Enhancing wrist abnormality detection with YOLO: Analysis of state-of-the-art single-stage detection models[J]. Biomedical Signal Processing and Control, 2024, 93: 106144. DOI: 10.1016/j.bspc.2024.106144.
+
+[29] LI J, SHAN H J, YU X W. Fracture detection of distal radius using deep-learning-based dual-channel feature fusion algorithm[J]. Chinese Journal of Traumatology, 2026, 29(2): 123-135. DOI: 10.1016/j.cjtee.2024.10.006. (《中华创伤杂志》英文版，属中华医学会系列，可作“中文相关成果”类补充)
+
+[30] JOCHER G, CHAURASIA A, QIU J. Ultralytics YOLOv8[CP/OL]. GitHub, 2023. https://github.com/ultralytics/ultralytics. (官方代码库；与 [14] YOLOv5 Zenodo 可并存，分别对应 v8 / v5)
+
+──────────────────────────────────────────────────────────────────
+可选再加 1 条（YOLO 系列综述，预印本，自行决定是否纳入）：
+
+[31] KHANAM R, HUSSAIN M. YOLOv11: An Overview of the Key Architectural Enhancements[EB/OL]. arXiv:2410.17725, 2024.
