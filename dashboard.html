@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商平台用户评论虚假信息识别 - 可视化仪表盘</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+        .header p { font-size: 13px; color: #999; }
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            flex-wrap: wrap;
+        }
+        .nav button {
+            padding: 8px 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .nav button:hover, .nav button.active {
+            background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+            color: #fff;
+            border-color: transparent;
+        }
+        .container { max-width: 1300px; margin: 0 auto; padding: 0 20px 40px; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #00d2ff;
+            border-left: 3px solid #3a7bd5;
+            padding-left: 10px;
+        }
+        .card h3 {
+            font-size: 15px;
+            margin: 14px 0 8px;
+            color: #aaa;
+        }
+        .card img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-card .label { font-size: 13px; color: #999; margin-top: 4px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 14px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        th {
+            background: rgba(58, 123, 213, 0.2);
+            color: #00d2ff;
+            font-weight: 600;
+        }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+        .highlight { color: #4ade80; font-weight: bold; }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-ml { background: rgba(245,133,24,0.2); color: #F58518; }
+        .badge-dl { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        .pipeline-step {
+            background: rgba(58,123,213,0.15);
+            border: 1px solid rgba(58,123,213,0.3);
+            border-radius: 10px;
+            padding: 14px 18px;
+            min-width: 140px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .pipeline-step .step-num {
+            font-size: 11px;
+            color: #3a7bd5;
+            margin-bottom: 4px;
+        }
+        .pipeline-step .step-title { font-size: 13px; font-weight: 600; }
+        .pipeline-step .step-desc { font-size: 11px; color: #999; margin-top: 4px; }
+        .pipeline-arrow {
+            font-size: 20px;
+            color: #3a7bd5;
+            padding: 0 6px;
+            flex-shrink: 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        #metrics-table-container { overflow-x: auto; }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>电商平台用户评论虚假信息识别模型构建与比较研究</h1>
+        <p>毕业设计可视化仪表盘 | 基于机器学习与深度学习的虚假评论识别</p>
+    </div>
+
+    <div class="nav">
+        <button class="active" onclick="showSection('overview')">项目概览</button>
+        <button onclick="showSection('pipeline')">数据采集与存储</button>
+        <button onclick="showSection('data')">数据预处理</button>
+        <button onclick="showSection('models')">模型对比</button>
+        <button onclick="showSection('charts')">可视化图表</button>
+        <button onclick="showSection('interpret')">可解释性分析</button>
+        <button onclick="showSection('robust')">鲁棒性分析</button>
+    </div>
+
+    <div class="container">
+        <!-- ========== 项目概览 ========== -->
+        <div id="overview" class="section active">
+            <div class="card">
+                <h2>研究技术路线</h2>
+                <div class="pipeline">
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 1</div>
+                        <div class="step-title">数据爬取</div>
+                        <div class="step-desc">爬虫抓取/反爬策略</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 2</div>
+                        <div class="step-title">数据库存储</div>
+                        <div class="step-desc">MySQL入库/去重</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 3</div>
+                        <div class="step-title">数据清洗</div>
+                        <div class="step-desc">去重/去噪/规范化</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 4</div>
+                        <div class="step-title">文本预处理</div>
+                        <div class="step-desc">分词/去停用词</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 5</div>
+                        <div class="step-title">特征提取</div>
+                        <div class="step-desc">TF-IDF + 行为特征</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 6</div>
+                        <div class="step-title">模型构建</div>
+                        <div class="step-desc">ML + DL 共7个模型</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 7</div>
+                        <div class="step-title">模型评估</div>
+                        <div class="step-desc">多维度对比分析</div>
+                    </div>
+                    <div class="pipeline-arrow">→</div>
+                    <div class="pipeline-step">
+                        <div class="step-num">STEP 8</div>
+                        <div class="step-title">可解释性&鲁棒性</div>
+                        <div class="step-desc">LIME/SHAP/对抗测试</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-3" id="stat-cards">
+                <div class="stat-card">
+                    <div class="value" id="stat-total">-</div>
+                    <div class="label">总样本数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-models">7</div>
+                    <div class="label">对比模型数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-best-f1">-</div>
+                    <div class="label">最佳F1值</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>模型概览</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>机器学习模型</h3>
+                        <ul style="list-style:none; padding:0; line-height:2.2;">
+                            <li><span class="badge badge-ml">ML</span> 逻辑回归 (Logistic Regression)</li>
+                            <li><span class="badge badge-ml">ML</span> 支持向量机 (SVM)</li>
+                            <li><span class="badge badge-ml">ML</span> 随机森林 (Random Forest)</li>
+                            <li><span class="badge badge-ml">ML</span> XGBoost</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>深度学习模型</h3>
+                        <ul style="list-style:none; padding:0; line-height:2.2;">
+                            <li><span class="badge badge-dl">DL</span> TextCNN (卷积神经网络)</li>
+                            <li><span class="badge badge-dl">DL</span> BiLSTM (双向长短期记忆网络)</li>
+                            <li><span class="badge badge-dl">DL</span> Transformer (自注意力机制)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 数据采集与存储 ==========  -->
+        <div id="pipeline" class="section">
+            <div class="card">
+                <h2>数据爬取模块</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>爬虫架构设计</h3>
+                        <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:16px; font-size:13px; line-height:2.2;">
+                            <div><strong style="color:#00d2ff;">目标平台：</strong>淘宝/天猫、京东、拼多多</div>
+                            <div><strong style="color:#00d2ff;">技术框架：</strong>Requests + 自定义反爬策略</div>
+                            <div><strong style="color:#00d2ff;">反爬策略：</strong></div>
+                            <div style="padding-left:16px;">• 随机User-Agent轮换（5种浏览器模拟）</div>
+                            <div style="padding-left:16px;">• IP代理池（支持动态切换）</div>
+                            <div style="padding-left:16px;">• 智能请求频率控制（1.5~4s随机延迟）</div>
+                            <div style="padding-left:16px;">• 每10次请求额外等待3~8s</div>
+                            <div style="padding-left:16px;">• 失败自动重试（最多3次，指数退避）</div>
+                            <div><strong style="color:#00d2ff;">合规说明：</strong>因法律合规要求，实际运行时使用本地模拟数据源</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>爬取统计</h3>
+                        <div id="crawl-stats" class="grid-2" style="gap:10px;">
+                            <div class="stat-card"><div class="value" id="stat-crawl-products">-</div><div class="label">抓取商品数</div></div>
+                            <div class="stat-card"><div class="value" id="stat-crawl-reviews">-</div><div class="label">获取评论数</div></div>
+                            <div class="stat-card"><div class="value" id="stat-crawl-requests">-</div><div class="label">总请求数</div></div>
+                            <div class="stat-card"><div class="value" id="stat-crawl-success">-</div><div class="label">成功率</div></div>
+                        </div>
+                        <h3>数据采集代码结构</h3>
+                        <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:14px; font-family:monospace; font-size:12px; line-height:1.8; color:#aaa;">
+<span style="color:#4ecdc4;">src/crawler.py</span>
+├── AntiCrawlStrategy  <span style="color:#666;"># 反爬策略管理器</span>
+│   ├── get_random_headers()  <span style="color:#666;"># 随机UA</span>
+│   ├── get_random_proxy()    <span style="color:#666;"># 代理轮换</span>
+│   └── wait()                <span style="color:#666;"># 频率控制</span>
+└── EcommerceReviewCrawler  <span style="color:#666;"># 评论爬虫</span>
+    ├── crawl_product_reviews()   <span style="color:#666;"># 单商品</span>
+    ├── crawl_multiple_products() <span style="color:#666;"># 批量</span>
+    └── save_raw_data()           <span style="color:#666;"># 原始存储</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>数据库设计与存储</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>数据库表结构（MySQL · 5张表）</h3>
+                        <table style="font-size:12px;">
+                            <tr><th>表名</th><th>用途</th><th>核心字段</th><th>关联</th></tr>
+                            <tr><td style="color:#00d2ff; font-weight:600;">products</td><td>商品信息表</td><td>product_id, product_name, category, shop_name, price, total_sales</td><td>主表</td></tr>
+                            <tr><td style="color:#00d2ff; font-weight:600;">users</td><td>用户信息表</td><td>user_id, nickname, register_days, total_reviews, avg_rating, credit_level</td><td>主表</td></tr>
+                            <tr><td style="color:#F58518; font-weight:600;">reviews</td><td>评论主表</td><td>review_id, review_text, rating, label, is_cleaned, is_duplicate</td><td>FK→products, users</td></tr>
+                            <tr><td style="color:#00d2ff; font-weight:600;">crawl_logs</td><td>爬取任务日志</td><td>task_name, platform, target_products, total_requests, status</td><td>独立</td></tr>
+                            <tr><td style="color:#00d2ff; font-weight:600;">cleaning_logs</td><td>清洗日志</td><td>total_before, duplicates_removed, total_after, cleaning_time</td><td>独立</td></tr>
+                        </table>
+                        <h3>E-R关系 &amp; 索引</h3>
+                        <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; font-size:12px; line-height:1.8; color:#999;">
+                            <div><strong style="color:#aaa;">外键约束：</strong>reviews.product_id → products.product_id (CASCADE)，reviews.user_id → users.user_id (CASCADE)</div>
+                            <div><strong style="color:#aaa;">索引优化：</strong>review_id(UNIQUE), product_id, user_id, platform, label, is_cleaned, category</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>数据库统计</h3>
+                        <div id="db-stats-container">
+                            <div class="grid-2" style="gap:10px;">
+                                <div class="stat-card"><div class="value" id="stat-db-total">-</div><div class="label">总记录数</div></div>
+                                <div class="stat-card"><div class="value" id="stat-db-unique">-</div><div class="label">去重后记录</div></div>
+                                <div class="stat-card"><div class="value" id="stat-db-cleaned">-</div><div class="label">已清洗记录</div></div>
+                                <div class="stat-card"><div class="value" id="stat-db-sessions">-</div><div class="label">爬取会话数</div></div>
+                            </div>
+                        </div>
+                        <h3>数据清洗管线</h3>
+                        <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:16px; font-size:13px; line-height:2;">
+                            <div>Step 1: <strong>去除重复评论</strong> — 基于文本内容完全匹配去重</div>
+                            <div>Step 2: <strong>去除空白评论</strong> — 过滤无内容/系统默认评论</div>
+                            <div>Step 3: <strong>去除过短评论</strong> — 最少4个字符</div>
+                            <div>Step 4: <strong>文本规范化</strong> — 去HTML标签/URL/多余标点</div>
+                            <div>Step 5: <strong>标记已清洗</strong> — 数据库字段标记</div>
+                        </div>
+                        <div id="cleaning-stats" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 数据与预处理 ========== -->
+        <div id="data" class="section">
+            <div class="card">
+                <h2>数据集描述</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>数据来源与规模</h3>
+                        <p style="line-height:1.8; color:#bbb; font-size:14px;">
+                            本研究数据集模拟主流电商平台的商品评论，共包含 <strong style="color:#00d2ff;">2000条</strong> 评论数据，
+                            其中真实评论和虚假评论各占50%（1:1平衡采样）。数据集按照 8:2 比例划分为训练集和测试集。
+                        </p>
+                        <h3>特征体系</h3>
+                        <table style="margin-top:8px;">
+                            <tr><th>特征类别</th><th>特征名称</th><th>说明</th></tr>
+                            <tr><td>文本特征</td><td>TF-IDF向量</td><td>unigram + bigram, 最大5000维</td></tr>
+                            <tr><td>统计特征</td><td>评论长度</td><td>评论字符数</td></tr>
+                            <tr><td>统计特征</td><td>感叹号数量</td><td>！和!的总数</td></tr>
+                            <tr><td>统计特征</td><td>重复字符比</td><td>连续重复字符占比</td></tr>
+                            <tr><td>情感特征</td><td>情感得分</td><td>0-1之间的情感极性</td></tr>
+                            <tr><td>行为特征</td><td>用户评论数</td><td>该用户历史评论总数</td></tr>
+                            <tr><td>行为特征</td><td>评论间隔</td><td>平均评论间隔天数</td></tr>
+                            <tr><td>行为特征</td><td>评分</td><td>1-5星评分</td></tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h3>预处理流程</h3>
+                        <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:16px; font-size:13px; line-height:2;">
+                            <div>1️⃣ <strong>文本清洗</strong> — 去除特殊字符、多余空格</div>
+                            <div>2️⃣ <strong>中文分词</strong> — 使用jieba进行精确分词</div>
+                            <div>3️⃣ <strong>去停用词</strong> — 过滤"的、了、在"等停用词</div>
+                            <div>4️⃣ <strong>TF-IDF向量化</strong> — 提取文本统计特征</div>
+                            <div>5️⃣ <strong>特征合并</strong> — TF-IDF + 手工特征拼接</div>
+                            <div>6️⃣ <strong>序列编码</strong> — 深度学习模型的词序列输入</div>
+                        </div>
+
+                        <h3>样本示例</h3>
+                        <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; font-size:12px;">
+                            <div style="margin-bottom:8px;">
+                                <span class="badge" style="background:rgba(74,222,128,0.2);color:#4ade80;">真实</span>
+                                "这个产品质量还行，用了几天感觉不错，物流也挺快的"
+                            </div>
+                            <div>
+                                <span class="badge" style="background:rgba(248,113,113,0.2);color:#f87171;">虚假</span>
+                                "太棒了太棒了！！！这是我买过最好的产品，没有之一！！！"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 模型对比 ========== -->
+        <div id="models" class="section">
+            <div class="card">
+                <h2>模型性能指标对比表</h2>
+                <div id="metrics-table-container">
+                    <div class="loading">请先运行 main.py 生成结果数据...</div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h2>性能指标柱状图</h2>
+                    <img id="img-metrics" src="output/metrics_comparison.png" 
+                         onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+                </div>
+                <div class="card">
+                    <h2>运行效率对比</h2>
+                    <img id="img-time" src="output/time_comparison.png"
+                         onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 可视化图表 ========== -->
+        <div id="charts" class="section">
+            <div class="card">
+                <h2>ROC曲线对比</h2>
+                <img id="img-roc" src="output/roc_curves.png"
+                     onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+            </div>
+            <div class="card">
+                <h2>混淆矩阵</h2>
+                <img id="img-cm" src="output/confusion_matrices.png"
+                     onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+            </div>
+            <div class="card">
+                <h2>深度学习训练损失曲线</h2>
+                <img id="img-loss" src="output/training_losses.png"
+                     onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+            </div>
+        </div>
+
+        <!-- ========== 可解释性分析 ========== -->
+        <div id="interpret" class="section">
+            <div class="card">
+                <h2>LIME局部可解释性分析</h2>
+                <p style="color:#999; font-size:13px; margin-bottom:12px;">
+                    LIME (Local Interpretable Model-agnostic Explanations) 通过在局部构建可解释的简单模型来解释单个预测结果，
+                    揭示哪些词语对虚假评论判别起关键作用。
+                </p>
+                <div class="grid-2" id="lime-images">
+                    <div><img src="output/lime_explanation_1.png" onerror="this.style.display='none'" /></div>
+                    <div><img src="output/lime_explanation_2.png" onerror="this.style.display='none'" /></div>
+                    <div><img src="output/lime_explanation_3.png" onerror="this.style.display='none'" /></div>
+                </div>
+                <div id="lime-details"></div>
+            </div>
+            <div class="card">
+                <h2>SHAP全局特征重要性分析</h2>
+                <p style="color:#999; font-size:13px; margin-bottom:12px;">
+                    SHAP (SHapley Additive exPlanations) 基于博弈论Shapley值计算每个特征对模型预测的贡献，
+                    揭示模型决策的全局特征重要性排名。
+                </p>
+                <img src="output/shap_feature_importance.png"
+                     onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+            </div>
+        </div>
+
+        <!-- ========== 鲁棒性分析 ========== -->
+        <div id="robust" class="section">
+            <div class="card">
+                <h2>鲁棒性测试结果</h2>
+                <p style="color:#999; font-size:13px; margin-bottom:12px;">
+                    通过向评论文本中注入不同级别的噪声（字符随机插入、删除、替换），测试各模型在对抗样本下的性能表现，
+                    评估模型的抗干扰能力和泛化稳定性。
+                </p>
+                <img src="output/robustness_analysis.png"
+                     onerror="this.parentElement.innerHTML+='<p class=loading>图片未生成，请运行 main.py</p>'" />
+            </div>
+            <div class="card">
+                <h2>鲁棒性详细数据</h2>
+                <div id="robustness-table-container">
+                    <div class="loading">请先运行 main.py 生成结果数据...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        电商平台用户评论虚假信息识别模型构建与比较研究 &copy; 2025 毕业设计
+    </div>
+
+    <script>
+        // 导航切换
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 加载metrics.json并渲染表格
+        async function loadMetrics() {
+            try {
+                const res = await fetch('output/metrics.json');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // 统计卡片
+                let bestF1 = 0;
+                data.forEach(d => { if (d.f1 > bestF1) bestF1 = d.f1; });
+                document.getElementById('stat-total').textContent = '2,000';
+                document.getElementById('stat-best-f1').textContent = bestF1.toFixed(4);
+
+                // 指标表格
+                let html = '<table><tr><th>模型</th><th>准确率</th><th>精确率</th><th>召回率</th><th>F1值</th><th>AUC</th><th>训练时间(s)</th><th>预测时间(s)</th></tr>';
+                data.forEach(d => {
+                    const isBest = d.f1 === bestF1;
+                    html += `<tr>
+                        <td style="text-align:left; font-weight:600;">${d.model}</td>
+                        <td>${d.accuracy.toFixed(4)}</td>
+                        <td>${d.precision.toFixed(4)}</td>
+                        <td>${d.recall.toFixed(4)}</td>
+                        <td class="${isBest ? 'highlight' : ''}">${d.f1.toFixed(4)}</td>
+                        <td>${d.auc ? d.auc.toFixed(4) : '-'}</td>
+                        <td>${d.train_time.toFixed(3)}</td>
+                        <td>${d.predict_time.toFixed(3)}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                document.getElementById('metrics-table-container').innerHTML = html;
+            } catch (e) {
+                console.log('metrics.json未找到，请先运行main.py');
+            }
+        }
+
+        // 加载鲁棒性数据
+        async function loadRobustness() {
+            try {
+                const res = await fetch('output/robustness.json');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                let html = '<table><tr><th>模型</th><th>噪声级别</th><th>准确率</th><th>精确率</th><th>召回率</th><th>F1值</th></tr>';
+                for (const [model, levels] of Object.entries(data)) {
+                    const sortedLevels = Object.keys(levels).sort((a,b) => parseFloat(a) - parseFloat(b));
+                    sortedLevels.forEach((level, i) => {
+                        const m = levels[level];
+                        html += `<tr>
+                            <td style="text-align:left; font-weight:${i===0?'600':'400'};">${i===0 ? model : ''}</td>
+                            <td>${parseFloat(level) === 0 ? '原始' : (parseFloat(level)*100).toFixed(0) + '%'}</td>
+                            <td>${m.accuracy.toFixed(4)}</td>
+                            <td>${m.precision.toFixed(4)}</td>
+                            <td>${m.recall.toFixed(4)}</td>
+                            <td>${m.f1.toFixed(4)}</td>
+                        </tr>`;
+                    });
+                }
+                html += '</table>';
+                document.getElementById('robustness-table-container').innerHTML = html;
+            } catch (e) {
+                console.log('robustness.json未找到');
+            }
+        }
+
+        // 加载LIME详情
+        async function loadLime() {
+            try {
+                const res = await fetch('output/lime_results.json');
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                let html = '<h3>LIME关键特征解析</h3>';
+                data.forEach((item, i) => {
+                    html += `<div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; margin:8px 0; font-size:13px;">`;
+                    html += `<div><strong>样本${i+1}</strong> (真实标签: ${item.true_label}) — "${item.text_snippet}..."</div>`;
+                    html += `<div style="margin-top:6px; color:#999;">关键词: `;
+                    item.top_features.slice(0, 5).forEach(f => {
+                        const color = f.weight > 0 ? '#f87171' : '#4ade80';
+                        html += `<span style="color:${color}; margin-right:8px;">${f.word}(${f.weight > 0 ? '+' : ''}${f.weight})</span>`;
+                    });
+                    html += `</div></div>`;
+                });
+                document.getElementById('lime-details').innerHTML = html;
+            } catch (e) {}
+        }
+
+        // 加载数据库统计和爬取统计
+        async function loadPipelineStats() {
+            try {
+                const res = await fetch('output/db_stats.json');
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('stat-db-total').textContent = (data.total_reviews || 0).toLocaleString();
+                document.getElementById('stat-db-unique').textContent = (data.unique_reviews || 0).toLocaleString();
+                document.getElementById('stat-db-cleaned').textContent = (data.cleaned_reviews || 0).toLocaleString();
+                document.getElementById('stat-db-sessions').textContent = data.crawl_sessions || 0;
+            } catch(e) { console.log('db_stats.json未找到'); }
+
+            try {
+                const res2 = await fetch('data/raw_crawled_data.json');
+                if (!res2.ok) return;
+                const crawl = await res2.json();
+                const stats = crawl.crawl_stats || {};
+                document.getElementById('stat-crawl-products').textContent = '5';
+                document.getElementById('stat-crawl-reviews').textContent = (stats.total_reviews || crawl.total_reviews || 0).toLocaleString();
+                document.getElementById('stat-crawl-requests').textContent = (stats.total_requests || 0).toLocaleString();
+                const rate = stats.total_requests > 0 ? ((stats.success_count / stats.total_requests) * 100).toFixed(1) + '%' : '-';
+                document.getElementById('stat-crawl-success').textContent = rate;
+            } catch(e) { console.log('raw_crawled_data.json未找到'); }
+
+            try {
+                const res3 = await fetch('output/cleaning_stats.json');
+                if (!res3.ok) return;
+                const cl = await res3.json();
+                let html = '<div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; font-size:13px; line-height:1.8;">';
+                html += `<div>清洗前: <strong style="color:#00d2ff;">${cl.total_before}</strong> 条</div>`;
+                html += `<div>去重: <strong style="color:#f87171;">-${cl.duplicates_removed}</strong> 条</div>`;
+                html += `<div>去空白: <strong style="color:#f87171;">-${cl.empty_removed}</strong> 条</div>`;
+                html += `<div>去过短: <strong style="color:#f87171;">-${cl.short_removed}</strong> 条</div>`;
+                html += `<div>清洗后: <strong style="color:#4ade80;">${cl.total_after}</strong> 条</div>`;
+                html += '</div>';
+                document.getElementById('cleaning-stats').innerHTML = html;
+            } catch(e) {}
+        }
+
+        // 页面加载时读取数据
+        loadMetrics();
+        loadRobustness();
+        loadLime();
+        loadPipelineStats();
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+{
+  "逻辑回归(LR)": {
+    "0.0": {
+      "accuracy": 0.9782,
+      "precision": 0.9577,
+      "recall": 1.0,
+      "f1": 0.9784
+    },
+    "0.05": {
+      "accuracy": 0.9782,
+      "precision": 0.9577,
+      "recall": 1.0,
+      "f1": 0.9784
+    },
+    "0.1": {
+      "accuracy": 0.9782,
+      "precision": 0.9577,
+      "recall": 1.0,
+      "f1": 0.9784
+    },
+    "0.15": {
+      "accuracy": 0.9755,
+      "precision": 0.9574,
+      "recall": 0.9945,
+      "f1": 0.9756
+    },
+    "0.2": {
+      "accuracy": 0.9755,
+      "precision": 0.9574,
+      "recall": 0.9945,
+      "f1": 0.9756
+    }
+  },
+  "支持向量机(SVM)": {
+    "0.0": {
+      "accuracy": 0.9673,
+      "precision": 0.9378,
+      "recall": 1.0,
+      "f1": 0.9679
+    },
+    "0.05": {
+      "accuracy": 0.9673,
+      "precision": 0.9378,
+      "recall": 1.0,
+      "f1": 0.9679
+    },
+    "0.1": {
+      "accuracy": 0.9673,
+      "precision": 0.9378,
+      "recall": 1.0,
+      "f1": 0.9679
+    },
+    "0.15": {
+      "accuracy": 0.9673,
+      "precision": 0.9378,
+      "recall": 1.0,
+      "f1": 0.9679
+    },
+    "0.2": {
+      "accuracy": 0.9673,
+      "precision": 0.9378,
+      "recall": 1.0,
+      "f1": 0.9679
+    }
+  },
+  "随机森林(RF)": {
+    "0.0": {
+      "accuracy": 0.9946,
+      "precision": 0.9891,
+      "recall": 1.0,
+      "f1": 0.9945
+    },
+    "0.05": {
+      "accuracy": 0.9946,
+      "precision": 0.9891,
+      "recall": 1.0,
+      "f1": 0.9945
+    },
+    "0.1": {
+      "accuracy": 0.9891,
+      "precision": 0.9784,
+      "recall": 1.0,
+      "f1": 0.9891
+    },
+    "0.15": {
+      "accuracy": 0.9837,
+      "precision": 0.9679,
+      "recall": 1.0,
+      "f1": 0.9837
+    },
+    "0.2": {
+      "accuracy": 0.9891,
+      "precision": 0.9784,
+      "recall": 1.0,
+      "f1": 0.9891
+    }
+  },
+  "XGBoost": {
+    "0.0": {
+      "accuracy": 0.9809,
+      "precision": 0.9628,
+      "recall": 1.0,
+      "f1": 0.981
+    },
+    "0.05": {
+      "accuracy": 0.9809,
+      "precision": 0.9628,
+      "recall": 1.0,
+      "f1": 0.981
+    },
+    "0.1": {
+      "accuracy": 0.9809,
+      "precision": 0.9628,
+      "recall": 1.0,
+      "f1": 0.981
+    },
+    "0.15": {
+      "accuracy": 0.9809,
+      "precision": 0.9628,
+      "recall": 1.0,
+      "f1": 0.981
+    },
+    "0.2": {
+      "accuracy": 0.9782,
+      "precision": 0.9626,
+      "recall": 0.9945,
+      "f1": 0.9783
+    }
+  }
+}

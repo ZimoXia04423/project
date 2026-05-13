@@ -1,0 +1,84 @@
+{
+  "top_features": [
+    {
+      "name": "合格",
+      "importance": 0.006352
+    },
+    {
+      "name": "感觉 不错",
+      "importance": 0.00638
+    },
+    {
+      "name": "中规中矩 惊喜",
+      "importance": 0.006797
+    },
+    {
+      "name": "exclamation_count",
+      "importance": 0.006913
+    },
+    {
+      "name": "三天",
+      "importance": 0.006992
+    },
+    {
+      "name": "下次 感觉",
+      "importance": 0.007465
+    },
+    {
+      "name": "一周 必入",
+      "importance": 0.007659
+    },
+    {
+      "name": "犹豫 很久",
+      "importance": 0.007701
+    },
+    {
+      "name": "垃圾 产品",
+      "importance": 0.007729
+    },
+    {
+      "name": "sentiment_score",
+      "importance": 0.007869
+    },
+    {
+      "name": "太棒了",
+      "importance": 0.008499
+    },
+    {
+      "name": "之一 太好了",
+      "importance": 0.008927
+    },
+    {
+      "name": "推荐",
+      "importance": 0.009106
+    },
+    {
+      "name": "一周 想象",
+      "importance": 0.009635
+    },
+    {
+      "name": "一般",
+      "importance": 0.011749
+    },
+    {
+      "name": "完全",
+      "importance": 0.01217
+    },
+    {
+      "name": "好评 基本",
+      "importance": 0.012899
+    },
+    {
+      "name": "三天 太好了",
+      "importance": 0.014463
+    },
+    {
+      "name": "user_review_count",
+      "importance": 0.036736
+    },
+    {
+      "name": "avg_review_interval_days",
+      "importance": 0.049237
+    }
+  ]
+}

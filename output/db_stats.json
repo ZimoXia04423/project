@@ -1,0 +1,22 @@
+{
+  "total_products": 20,
+  "total_users": 1983,
+  "total_reviews": 2000,
+  "unique_reviews": 2000,
+  "cleaned_reviews": 0,
+  "label_distribution": {
+    "真实评论": 1000,
+    "虚假评论": 1000
+  },
+  "platform_distribution": {
+    "taobao": 2000
+  },
+  "rating_distribution": {
+    "1": 134,
+    "2": 43,
+    "3": 192,
+    "4": 527,
+    "5": 1104
+  },
+  "crawl_sessions": 1
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "model": "逻辑回归(LR)",
+    "accuracy": 0.9782,
+    "precision": 0.9577,
+    "recall": 1.0,
+    "f1": 0.9784,
+    "auc": 0.9955,
+    "train_time": 0.084,
+    "predict_time": 0.001
+  },
+  {
+    "model": "支持向量机(SVM)",
+    "accuracy": 0.9673,
+    "precision": 0.9378,
+    "recall": 1.0,
+    "f1": 0.9679,
+    "auc": 0.9938,
+    "train_time": 0.137,
+    "predict_time": 0.012
+  },
+  {
+    "model": "随机森林(RF)",
+    "accuracy": 0.9946,
+    "precision": 0.9891,
+    "recall": 1.0,
+    "f1": 0.9945,
+    "auc": 1.0,
+    "train_time": 0.136,
+    "predict_time": 0.059
+  },
+  {
+    "model": "XGBoost",
+    "accuracy": 0.9809,
+    "precision": 0.9628,
+    "recall": 1.0,
+    "f1": 0.981,
+    "auc": 0.9981,
+    "train_time": 0.147,
+    "predict_time": 0.004
+  },
+  {
+    "model": "TextCNN",
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc": 1.0,
+    "train_time": 5.222,
+    "predict_time": 0.038
+  },
+  {
+    "model": "BiLSTM",
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc": 1.0,
+    "train_time": 39.201,
+    "predict_time": 0.346
+  },
+  {
+    "model": "Transformer",
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "auc": 1.0,
+    "train_time": 29.011,
+    "predict_time": 0.18
+  }
+]
